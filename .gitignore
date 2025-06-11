@@ -6,9 +6,11 @@
 **/videos/
 
 *.csv
-*.mp4
-*.h5
 *.data
+*.err
+*.h5
+*.mp4
+*.out
 
 **/__pycache__/
 **/__init__.py/
