@@ -1,5 +1,5 @@
 .venv/
-**/data/
+**/logs/
 **/outputs/
 **/poses/
 **/poses_csv/
