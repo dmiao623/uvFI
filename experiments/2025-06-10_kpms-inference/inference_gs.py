@@ -22,11 +22,12 @@ MODEL_NAME = "2025_01_07-16_11_15"
 model = kpms.load_checkpoint(G_PROJ_PATH, MODEL_NAME)[0]
 
 G_BASE_PATH = "/projects/kumar-lab/miaod/experiments/2025-06-10_kpms-inference/data/videos"
-new_data_dir = "/projects/kumar-lab/miaod/experiments/2025-06-10_kpms-inference/data/poses_csv"
+new_data_dir = G_BASE_PATH + "/poses_csv_" + sys.argv[1]
 project_path = pathlib.Path(G_PROJ_PATH)
 data, metadata, coordinates = load_and_format_data(new_data_dir, project_path)
 
 def config_func(): return kpms.load_config(project_path)
 
-results = kpms.apply_model(model, data, metadata, project_path, MODEL_NAME, **config_func(), results_path = "/projects/kumar-lab/miaod/experiments/2025-06-10_kpms-inference/out" + sys.argv[1] + ".h5")
+results = kpms.apply_model(model, data, metadata, project_path, MODEL_NAME, **config_func(),
+                           results_path = "/projects/kumar-lab/miaod/projects/uvFI/experiments/2025-06-10_kpms-inference/output/out_" + sys.argv[1] + ".h5")
 

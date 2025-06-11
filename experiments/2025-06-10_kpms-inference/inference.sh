@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH --job-name=inference
+#SBATCH --job-name=unsupervised_inference
 #
 #SBATCH --time=01:30:00
 #SBATCH --ntasks=1
@@ -11,7 +11,7 @@
 #SBATCH --mem=126G
 #SBATCH --output=logs/output_%j.out
 #SBATCH --error=logs/error_%j.err
-#SBATCH --array=1-25
+#SBATCH --array=1-26
 
 #conda init
 #conda activate keypoint_moseq_gs

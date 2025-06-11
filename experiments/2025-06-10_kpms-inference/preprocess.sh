@@ -9,7 +9,7 @@
 #SBATCH --qos=gpu_inference
 #SBATCH --partition=gpu_a100_mig
 #SBATCH --mem=126G
-#SBATCH --output=/projects/kumar-lab/sabnig/Github/unsupervised_behavior_jax/logs/output-%j.out
+#SBATCH --output=/projects/kumar-lab/miaod/projects/uvFI/experiments/2025-06-10_kpms-inference/logs/output-%j.out
 
 #conda activate keypoint_moseq
 python3 preprocess_gs.py
