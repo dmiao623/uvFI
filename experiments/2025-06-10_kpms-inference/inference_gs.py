@@ -21,7 +21,7 @@ MODEL_NAME = "2025_01_07-16_11_15"
 # Load model checkpoint
 model = kpms.load_checkpoint(G_PROJ_PATH, MODEL_NAME)[0]
 
-G_BASE_PATH = "/projects/kumar-lab/miaod/experiments/2025-06-10_kpms-inference/data/videos"
+G_BASE_PATH = "/projects/kumar-lab/miaod/projects/uvFI/experiments/2025-06-10_kpms-inference/data/videos"
 new_data_dir = G_BASE_PATH + "/poses_csv_" + sys.argv[1]
 project_path = pathlib.Path(G_PROJ_PATH)
 data, metadata, coordinates = load_and_format_data(new_data_dir, project_path)

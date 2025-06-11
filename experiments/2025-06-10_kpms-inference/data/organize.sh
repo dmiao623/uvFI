@@ -3,7 +3,7 @@
 EXP_DIR="/projects/kumar-lab/miaod/projects/uvFI/experiments/2025-06-10_kpms-inference"
 SOURCE_DIR="$EXP_DIR/data/videos/poses_csv"
 TARGET_DIR_PREFIX="$EXP_DIR/data/videos/poses_csv_"
-files_per_folder=21
+files_per_folder=8
 
 if [ ! -d "$SOURCE_DIR" ]; then
     echo "Error: Source directory '$SOURCE_DIR' does not exist."
