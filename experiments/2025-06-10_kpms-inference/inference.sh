@@ -2,7 +2,7 @@
 #
 #SBATCH --job-name=unsupervised_inference
 #
-#SBATCH --time=02:00:00
+#SBATCH --time=01:30:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
@@ -11,7 +11,7 @@
 #SBATCH --mem=126G
 #SBATCH --output=logs/output_%j.out
 #SBATCH --error=logs/error_%j.err
-#SBATCH --array=1-68
+#SBATCH --array=1-78
 
 #conda init
 #conda activate keypoint_moseq_gs
