@@ -1,3 +1,10 @@
 .venv/
-data/
-outputs/
+**/data/
+**/outputs/
+**/poses/
+**/poses_csv/
+**/videos/
+
+*.csv
+*.mp4
+*.h5
