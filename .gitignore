@@ -11,6 +11,8 @@
 *.h5
 *.mp4
 *.out
+*.pdf
+*.png
 
 **/.ipynb_checkpoints/
 **/__pycache__/
