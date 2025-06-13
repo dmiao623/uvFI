@@ -1,9 +1,10 @@
 .venv/
-**/logs/
-**/outputs/
-**/poses/
-**/poses_csv/
-**/videos/
+logs/
+outputs/
+poses/
+poses_csv/
+results/
+videos/
 
 *.csv
 *.data
@@ -14,6 +15,7 @@
 *.pdf
 *.png
 
-**/.ipynb_checkpoints/
-**/__pycache__/
-**/__init__.py
+.ipynb_checkpoints/
+__pycache__/
+
+.DS_Store
