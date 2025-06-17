@@ -13,6 +13,8 @@ videos/
 *.mp4
 *.out
 *.pdf
+*.parquet
+*.pkl
 *.png
 
 .ipynb_checkpoints/
