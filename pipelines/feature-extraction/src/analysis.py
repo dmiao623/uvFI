@@ -4,12 +4,10 @@ import pandas as pd
 import scipy.cluster.hierarchy as sch
 import seaborn as sns
 import umap
-from matplotlib import cm
-from matplotlib.colors import Normalize
 from pathlib import Path
 from scipy.spatial.distance import squareform
 from scipy.stats import pearsonr
-from typing import Any, Callable, Iterable, List, Optional, Sequence Union
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Union
 
 def merge_on_transformed(
     df1: pd.DataFrame,
@@ -18,17 +16,26 @@ def merge_on_transformed(
     df2: pd.DataFrame,
     col2: str,
     f2: Callable[[Any], Any],
-    keep: str = "inner"
+    how: str = "inner",
+    *,
+    suffixes: tuple[str, str] = ("_x", "_y"),
+    rename: Optional[str]="name",
 ) -> pd.DataFrame:
+    df1_tmp = df1.copy()
+    df2_tmp = df2.copy()
 
-    df1_tmp = df1[[col1]].copy()
-    df2_tmp = df2[[col2]].copy()
+    key = "__merge_key__"
+    df1_tmp[key] = df1_tmp[col1].map(f1)
+    df2_tmp[key] = df2_tmp[col2].map(f2)
 
-    df1_tmp["key"] = df1_tmp[col1].map(f1)
-    df2_tmp["key"] = df2_tmp[col2].map(f2)
+    merged = pd.merge(df1_tmp, df2_tmp, on=key, how=how, suffixes=suffixes)
+    merged = merged.drop(columns=[col1, col2])
 
-    merged = pd.merge(df1_tmp[["key"]], df2_tmp[["key"]], on="key", how=keep)
-    merged = merged.drop_duplicates("key").reset_index(drop=True)
+    if rename:
+        merged = merged.rename(columns={key: rename})
+        col = merged.pop(rename)
+        merged.insert(0, rename, col)
+
     return merged
 
 def plot_feature_correlations(
@@ -36,52 +43,90 @@ def plot_feature_correlations(
     feature_cols: list[str],
     target_col: str,
     *,
+    cols_per_row: int = 64,
     sort_by_abs: bool = True,
     cmap: str = "coolwarm",
     fmt: str = ".2f",
+    h_per_row: float = 2.3,
+    w_per_col: float = 0.6,
+    base_font: float = 10.0,
 ) -> None:
-    with np.errstate(invalid='ignore', divide='ignore'):
-        r = df[feature_cols].corrwith(df[target_col], method='pearson')
+    with np.errstate(invalid="ignore", divide="ignore"):
+        r = df[feature_cols].corrwith(df[target_col], method="pearson")
+
     if sort_by_abs:
         r = r.reindex(r.abs().sort_values(ascending=False).index)
 
-    corr_df = pd.DataFrame(r).T
-    corr_df.index = [target_col]
+    chunks = [
+        r.iloc[i : i + cols_per_row]
+        for i in range(0, len(r), cols_per_row)
+    ]
+    n_rows = len(chunks)
 
-    f_w = max(4, len(r) * 0.35)
-    f_h = 2.2
-    base = 10
+    fig_w = max(4.0, min(cols_per_row, max(map(len, chunks))) * w_per_col + 1)
+    fig_h = max(3.0, n_rows * h_per_row)
 
-    plt.figure(figsize=(f_w, f_h))
     sns.set(font_scale=1)
-
-    ax = sns.heatmap(
-        corr_df, cmap=cmap,
-        center=0, vmin=-1, vmax=1,
-        linewidths=0.6, linecolor='black',
-        annot=True, fmt=fmt, annot_kws={"size": base * 0.8},
-        cbar_kws={
-            "label": "Pearson r",
-            "shrink": 0.6,
-            "pad": 0.02,
-            "aspect": 15,
-        },
+    fig, axes = plt.subplots(
+        n_rows,
+        1,
+        figsize=(fig_w, fig_h),
+        constrained_layout=True,
+        squeeze=False,
     )
 
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="center",
-                       fontsize=base * 0.8)
-    ax.set_yticklabels(ax.get_yticklabels(), rotation=0,
-                       fontsize=base * 0.9)
+    vmin, vmax = -1.0, 1.0
+    cbar_ax = None
 
-    cbar = ax.collections[0].colorbar
-    cbar.ax.tick_params(labelsize=base * 0.8)          # tick number font
-    cbar.ax.set_ylabel("Pearson r", fontsize=base * 0.9, rotation=-90,
-                       va='center', labelpad=12)
+    for idx, (ax, chunk) in enumerate(zip(axes[:, 0], chunks), start=1):
+        heat = sns.heatmap(
+            pd.DataFrame(chunk).T,
+            ax=ax,
+            cmap=cmap,
+            center=0,
+            vmin=vmin,
+            vmax=vmax,
+            linewidths=0.6,
+            linecolor="black",
+            annot=True,
+            fmt=fmt,
+            annot_kws={"size": base_font * 0.8},
+            cbar=idx == 1,
+            cbar_ax=cbar_ax,
+            cbar_kws={
+                "label": "Pearson r",
+                "shrink": 0.6,
+                "pad": 0.02,
+                "aspect": 15,
+            },
+        )
+        if idx == 1:
+            cbar_ax = heat.collections[0].colorbar.ax
 
-    ax.set_title(f"Correlation with {target_col}",
-                 loc="left", weight="bold", fontsize=base * 1.1)
+        ax.set_xticklabels(
+            ax.get_xticklabels(),
+            rotation=90,
+            ha="center",
+            fontsize=base_font * 0.8,
+        )
+        ax.set_yticklabels(
+            ax.get_yticklabels(),
+            rotation=0,
+            fontsize=base_font * 0.9,
+        )
 
-    plt.tight_layout()
+        if idx == 1:
+            ax.set_title(
+                f"Correlation with {target_col}",
+                loc="left",
+                weight="bold",
+                fontsize=base_font * 1.1,
+            )
+        else:
+            ax.set_title("")
+    if cbar_ax is not None:
+        cbar_ax.set_ylabel("Pearson r", rotation=-90, labelpad=12)
+
     plt.show()
 
 def plot_feature_scatter(
@@ -108,11 +153,11 @@ def plot_feature_scatter(
     plt.show()
 
 def plot_correlation_grid(
-        df: pd.DataFrame,
-        feature_cols: list[str],
-        *,
-        cluster: bool = True,
-    ) -> None:
+    df: pd.DataFrame,
+    feature_cols: list[str],
+    *,
+    cluster: bool = True,
+) -> None:
 
     X = df[feature_cols].apply(pd.to_numeric, errors='coerce').replace(
         [np.inf, -np.inf], np.nan
@@ -158,51 +203,49 @@ def plot_correlation_grid(
 
 def plot_umap(
     df: pd.DataFrame,
-    feature_cols: List[str],
+    feature_cols: Sequence[str],
     color_col: str,
+    random_state: int=623,
+) -> Optional[np.ndarray]:
+    X = np.vstack(df[feature_cols].values)
+    embedding = umap.UMAP(random_state=random_state).fit_transform(X)
+
+    plt.figure(figsize=(10, 10))
+    sc = plt.scatter(embedding[:, 0], embedding[:, 1], c=df[color_col].values)
+    plt.xlabel("UMAP1")
+    plt.ylabel("UMAP2")
+    plt.title(f"UMAP of selected features (colored by {color_col})")
+    plt.colorbar(sc, label=color_col)
+    plt.tight_layout()
+
+    # return embedding
+
+def plot_pca(
+    df: pd.DataFrame,
+    feature_cols: Sequence[str],
+    color_col: str,
+    label_col: Optional[str] = None,
     *,
-    n_neighbors: int = 15,
-    min_dist: float = 0.1,
-    metric: str = "euclidean",
-    cmap: Union[str, plt.Colormap] = "viridis",
-    figsize: tuple = (6, 5),
-    title: Optional[str] = None,
-    show: bool = True,
-) -> umap.UMAP:
+    n_components: int=2,
+    random_state: int=623,
+) -> Optional[np.ndarray]:
+    X = np.vstack(df[feature_cols].values)
 
-    reducer = umap.UMAP(
-        n_neighbors=n_neighbors,
-        min_dist=min_dist,
-        metric=metric,
-        random_state=42,
-    )
-    embedding = reducer.fit_transform(df[feature_cols].values)
+    pca = PCA(n_components=n_components, random_state=random_state)
+    embedding = pca.fit_transform(X)
 
-    values = df[color_col].values
-    norm = Normalize(vmin=values.min(), vmax=values.max())
+    plt.figure(figsize=(10, 10))
+    sc = plt.scatter(embedding[:, 0], embedding[:, 1], c=df[color_col].values)
+    plt.xlabel("PCA 1")
+    plt.ylabel("PCA 2")
+    plt.title(f"PCA of selected features (colored by {color_col})")
+    plt.colorbar(sc, label=color_col)
 
-    fig, ax = plt.subplots(figsize=figsize)
-    sc = ax.scatter(
-        embedding[:, 0],
-        embedding[:, 1],
-        c=values,
-        cmap=cmap,
-        norm=norm,
-        s=10,
-        linewidth=0,
-        alpha=0.8,
-    )
+    if label_col is not None:
+        for (x, y), label in zip(embedding, df[label_col].values):
+            plt.text(x, y, str(label), fontsize=7, ha="center", va="center")
 
-    cbar = fig.colorbar(sc, ax=ax)
-    cbar.set_label(color_col)
+    plt.tight_layout()
+    plt.show()
 
-    ax.set_xlabel("UMAP-1")
-    ax.set_ylabel("UMAP-2")
-    ax.set_title(title or f"UMAP colored by `{color_col}`")
-    ax.set_aspect("equal", "datalim")
-
-    if show:
-        plt.tight_layout()
-        plt.show()
-    return reducer
-
+    # return embedding
