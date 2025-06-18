@@ -7,6 +7,7 @@ import umap
 from pathlib import Path
 from scipy.spatial.distance import squareform
 from scipy.stats import pearsonr
+from sklearn.decomposition import PCA
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Union
 
 def merge_on_transformed(
